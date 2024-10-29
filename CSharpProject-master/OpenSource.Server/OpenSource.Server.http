@@ -1,0 +1,6 @@
+@OpenSource.Server_HostAddress = http://localhost:5032
+
+GET {{OpenSource.Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

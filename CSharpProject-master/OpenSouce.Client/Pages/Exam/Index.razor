@@ -1,0 +1,89 @@
+﻿@page "/exams"
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+<h1>Exams</h1>
+
+@if (exams == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+                <th>Created By</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var exam in exams)
+            {
+                <tr>
+                    <td>@exam.ExamName</td>
+                    <td>@exam.StartTime</td>
+                    <td>@exam.EndTime</td>
+                    <td>@exam.User?.Username</td>
+                    <td>
+                        <button class="btn btn-primary mr-1" @onclick="@(() => EditExam(exam.ExamId))">Edit</button>
+                        <button class="btn btn-danger" @onclick="@(() => DeleteExam(exam.ExamId))">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <br />
+
+    <a href="/exams/add" class="btn btn-success">Add Exam</a>
+
+    <br />
+
+}
+
+@code {
+
+    private List<Exam> exams = new List<Exam>();
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var examsResponse = await HttpClient.GetFromJsonAsync<List<Exam>>("api/exam");
+            exams = examsResponse;
+
+      
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching exams or users: {ex.Message}");
+        }
+    }
+
+    private async Task EditExam(int examId)
+    {
+        NavigationManager.NavigateTo($"/exams/edit/{examId}");
+    }
+
+    private async Task DeleteExam(int examId)
+    {
+        try
+        {
+            var response = await HttpClient.DeleteAsync($"api/exam/{examId}");
+            response.EnsureSuccessStatusCode(); 
+
+            exams.RemoveAll(e => e.ExamId == examId);
+
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Error deleting exam: {ex.Message}");
+        }
+    }
+}

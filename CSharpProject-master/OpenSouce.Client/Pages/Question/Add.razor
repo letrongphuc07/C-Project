@@ -1,0 +1,63 @@
+﻿@page "/questions/add"
+@inject HttpClient HttpClient
+
+@inject NavigationManager NavigationManager
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+
+<h1>Add Question</h1>
+
+<form @onsubmit="HandleSubmit">
+    <div class="form-group">
+        <label for="questionText">Question Text</label>
+        <textarea class="form-control" id="questionText" @bind="question.QuestionText" required></textarea>
+    </div>
+    <div class="form-group">
+        <label for="questionType">Question Type</label>
+        <input type="text" class="form-control" id="questionType" @bind="question.QuestionType" required>
+    </div>
+    <div class="form-group">
+        <label for="examId">Exam:</label>
+        <select id="examId" class="form-control" @bind="question.ExamId" required>
+            <option value="0">-- Select Exam --</option>
+            @foreach (var exam in exams)
+            {
+                <option value="@exam.ExamId">@exam.ExamName</option>
+            }
+        </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Create Question</button>
+</form>
+
+@code {
+
+    private Question question = new Question();
+    private List<Exam> exams = new List<Exam>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var examsResponse = await HttpClient.GetFromJsonAsync<List<Exam>>("api/exam");
+            exams = examsResponse;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching exams: {ex.Message}");
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            var response = await HttpClient.PostAsJsonAsync("api/question", question);
+            response.EnsureSuccessStatusCode();
+
+            NavigationManager.NavigateTo("/questions");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error creating question: {ex.Message}");
+        }
+    }
+}

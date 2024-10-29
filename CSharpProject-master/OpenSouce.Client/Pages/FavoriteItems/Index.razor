@@ -1,0 +1,90 @@
+﻿@page "/favoriteItems"
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+
+<h1>Favorite Items</h1>
+
+@if (isLoading)
+{
+    <p><em>Loading...</em></p>
+}
+    else
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Item ID</th>
+                    <th>User ID</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var favoriteItem in favoriteItems)
+                {
+                    <tr>
+                        <td>@favoriteItem.FavoriteId</td>
+                        <td>@favoriteItem.ItemId</td>
+                        <td>@favoriteItem.UserId</td>
+                        <td>
+                            <button class="btn btn-link" @onclick="() => EditFavoriteItem(favoriteItem.FavoriteId)">Edit</button>
+                            <button class="btn btn-link" @onclick="() => DeleteFavoriteItem(favoriteItem.FavoriteId)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <p class="text-danger">@errorMessage</p>
+}
+
+@code {
+    private List<FavoriteItems> favoriteItems;
+    private string errorMessage;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            favoriteItems = await HttpClient.GetFromJsonAsync<List<FavoriteItems>>("api/FavoriteItems");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task EditFavoriteItem(int id)
+    {
+        NavigationManager.NavigateTo($"/favoriteItems/edit/{id}");
+    }
+
+    private async Task DeleteFavoriteItem(int id)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this favorite item?");
+        if (confirmed)
+        {
+            try
+            {
+                var response = await HttpClient.DeleteAsync($"api/FavoriteItems/{id}");
+                response.EnsureSuccessStatusCode();
+                favoriteItems.RemoveAll(e => e.FavoriteId == id);
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"Error: {ex.Message}";
+            }
+        }
+    }
+}

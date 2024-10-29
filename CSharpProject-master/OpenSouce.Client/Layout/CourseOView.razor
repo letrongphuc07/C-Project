@@ -1,0 +1,105 @@
+@inject HttpClient http
+@inherits LayoutComponentBase
+<head>
+<link href="/css/courseoview.css" rel="stylesheet" />
+</head>
+@* <div class="row">
+    @foreach (var x in course)
+    {
+        <div class="col-md-3">
+            <div class="card">
+                <img src="@x.CourseImg" alt="@x.CourseName"  class="img-fluid">
+                <div class="card-body">
+                    <h5 class="card-title">@x.CourseName</h5>
+                    <p class="card-text">@x.CourseDescription</p>
+                    <a style="text-align:center" href="/home/videos">@x.CoursePrice</a>
+                </div>
+            </div>
+        </div>
+    }
+</div> *@
+
+<style>
+    .card {
+        width: 18rem;
+        height: 36rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .card-body {
+        position: absolute;
+        bottom: 1rem;
+    }
+
+</style>
+<div class="row">
+    <div class="col-3">
+        <div class="card">
+            <img src="/img/easytoeic.png" class="card-img-top" alt="...">
+            <div class="card-body">
+                <h5 class="card-title">Toeic 0-250+</h5>
+                <p class="card-text">Toeic căn bản cho người mới bắt đầu</p>
+                <a href="#" class="btn btn-primary">Price: 700000</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-3">
+        <div class="card">
+            <img src="/img/starterToeic.png" class="card-img-top" alt="...">
+            <div class="card-body">
+                <h5 class="card-title">Toeic 200-500+</h5>
+                <p class="card-text">Toeic sơ cấp cho người đã học xong "Verry Easy Toeic"</p>
+                <a href="#" class="btn btn-primary">Price: 1000000</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-3">
+        <div class="card">
+            <img src="/img/deverlopingskill.png" class="card-img-top" alt="...">
+            <div class="card-body">
+                <h5 class="card-title">Toeic 500-750+</h5>
+                <p class="card-text">Toeic trung cấp sau khi đã học được từ trước 500 điểm</p>
+                <a href="#" class="btn btn-primary">Price: 2000000</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-3">
+        <div class="card">
+            <img src="/img/analysttoeic.png" class="card-img-top" alt="...">
+            <div class="card-body">
+                <h5 class="card-title">Toeic 750-990</h5>
+                <p class="card-text">Toeic dành cho người đã học được trước 700 điểm</p>
+                <a href="#" class="btn btn-primary">Price: 3000000</a>
+            </div>
+        </div>
+    </div>
+</div>
+<br />
+<iframe id="chatboxIframe" width="350" height="430" allow="microphone;" src="https://console.dialogflow.com/api-client/demo/embedded/f94e6213-daf1-443c-84fd-a0e303891271" style="display: none;"></iframe>
+<button id="openChatboxButton">Mở Chatbox</button>
+<GGtranslate />
+
+<script>
+    document.getElementById('openChatboxButton').addEventListener('click', function () {
+        document.getElementById('chatboxIframe').style.display = 'block';
+    });
+
+    document.addEventListener('click', function (event) {
+        var chatbox = document.getElementById('chatboxIframe');
+        var openButton = document.getElementById('openChatboxButton');
+        if (!chatbox.contains(event.target) && !openButton.contains(event.target)) {
+            chatbox.style.display = 'none';
+        }
+    });
+</script>
+@code {
+    List<Course> course = new List<Course>();
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await http.GetFromJsonAsync<List<Course>>("api/courses");
+        if (result is not null)
+            course = result;
+    }
+}

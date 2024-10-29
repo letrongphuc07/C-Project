@@ -1,0 +1,107 @@
+﻿@page "/users"
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+
+<h1>Users</h1>
+<br />
+
+<input type="text" @bind-value="@searchTerm" />
+<input type="button" value="Search" @onclick="@SearchIssues" />
+<br/>
+<a href="/users/add" class="btn btn-success mt-3">Add User</a>
+
+@if (users == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in users)
+            {
+                <tr>
+                    <td>@user.Username</td>
+                    <td>
+                        <button class="btn btn-primary mr-1" @onclick="@(() => EditUser(user.UserId))">Edit</button>
+                        <button class="btn btn-danger" @onclick="@(() => DeleteUser(user.UserId))">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<User> users = new List<User>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var response = await HttpClient.GetFromJsonAsync<List<User>>("api/user");
+            users = response;
+        }
+        catch (Exception ex)
+        {
+            // Handle errors appropriately (e.g., display error message)
+            Console.WriteLine($"Error fetching users: {ex.Message}");
+        }
+    }
+
+    private async Task EditUser(int userId)
+    {
+        // Implement edit logic using HttpClient (example)
+        try
+        {
+            // Navigate to the edit page passing the userId
+            NavigationManager.NavigateTo($"/users/edit/{userId}");
+        }
+        catch (Exception ex)
+        {
+            // Handle errors appropriately (e.g., display error message)
+            Console.WriteLine($"Error editing user: {ex.Message}");
+        }
+    }
+
+    private async Task DeleteUser(int userId)
+    {
+        // Implement deletion logic using HttpClient (example)
+        try
+        {
+            var response = await HttpClient.DeleteAsync($"api/user/{userId}");
+            response.EnsureSuccessStatusCode(); // Check for successful deletion
+
+            // Remove the deleted user from the local list (optional)
+            users.RemoveAll(u => u.UserId == userId);
+
+            // Consider displaying a success message to the user
+        }
+        catch (HttpRequestException ex)
+        {
+            // Handle errors appropriately (e.g., display error message)
+            Console.WriteLine($"Error deleting user: {ex.Message}");
+        }
+    }
+    private string searchTerm;
+
+    private async Task SearchIssues()
+    {
+        try
+        {
+            users = await HttpClient.GetFromJsonAsync<List<User>>($"api/user/search?searchItem={searchTerm}");
+        }
+        catch (Exception ex)
+        {
+            // Xử lý lỗi một cách thích hợp (ví dụ: hiển thị thông báo lỗi)
+            Console.WriteLine($"Lỗi khi tìm kiếm người dùng: {ex.Message}");
+        }
+    }
+}

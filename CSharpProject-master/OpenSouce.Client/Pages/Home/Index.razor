@@ -1,0 +1,58 @@
+﻿@page "/home/videos"
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@if (videos == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <div class="row row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
+        @foreach (var video in videos)
+        {
+            <div class="col">
+                <div class="card h-100">
+                    <iframe width="100%" height="200" src="@video.VideoUrl" frameborder="0" allowfullscreen></iframe>
+                    <div class="card-body">
+                        <h5 class="card-title">@video.Title</h5>
+                        <p class="card-text">@video.Description</p>
+                        <p class="card-text">Duration: @video.Duration minutes</p>
+                        <p class="card-text">Uploaded: @video.UploadDate.ToShortDateString()</p>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+@code {
+
+    List<Video> videos = new List<Video>();
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Delay(500);
+        var result = await HttpClient.GetFromJsonAsync<List<Video>>("api/video");
+        if (result is not null)
+            videos = result;
+    }
+    private async Task DeleteVideo(int videoId)
+    {
+        try
+        {
+            var response = await HttpClient.DeleteAsync($"api/video/{videoId}");
+            response.EnsureSuccessStatusCode();
+
+            videos.RemoveAll(v => v.VideoId == videoId);
+
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Error deleting video: {ex.Message}");
+        }
+    }
+
+    private async Task EditVideo(int videoId)
+    {
+        NavigationManager.NavigateTo($"/videos/edit/{videoId}");
+    }
+}

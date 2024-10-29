@@ -1,0 +1,41 @@
+﻿@page "/favoriteitems/add"
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+
+<h1>Add Favorite Item</h1>
+@if (errorMessage != null)
+{
+    <p class="text-danger">@errorMessage</p>
+}
+
+<form @onsubmit="HandleSubmit">
+    <div class="form-group">
+        <label for="itemId">Item ID</label>
+        <input type="text" class="form-control" id="itemId" @bind="favoriteItem.ItemId">
+    </div>
+    <div class="form-group">
+        <label for="userId">User ID</label>
+        <input type="text" class="form-control" id="userId" @bind="favoriteItem.UserId">
+    </div>
+    <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+
+@code {
+    private FavoriteItems favoriteItem = new FavoriteItems();
+    private string errorMessage;
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            var response = await HttpClient.PostAsJsonAsync("api/FavoriteItems", favoriteItem); // Update endpoint here
+            response.EnsureSuccessStatusCode();
+            NavigationManager.NavigateTo("/favoriteitems");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Error: " + ex.Message;
+        }
+    }
+}

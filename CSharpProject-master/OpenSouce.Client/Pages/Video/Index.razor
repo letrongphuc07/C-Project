@@ -1,0 +1,93 @@
+﻿@page "/videos"
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+<h1>All Videos</h1>
+
+<input type="text" @bind-value="@searchTerm" />
+<input type="button" value="Search" @onclick="@SearchIssues" />
+<br />  <a href="/videos/add" class="btn btn-success">Add Video</a>
+@if (videos == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Duration</th>
+                <th>Upload Date</th>
+                <th>Video</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var video in videos)
+            {
+                <tr>
+                    <td>@video.Title</td>
+                    <td>@video.Description</td>
+                    <td>@video.Duration minutes</td>
+                    <td>@video.UploadDate.ToShortDateString()</td>
+                    <td>
+                        <iframe width="250" height="150" src="@video.VideoUrl" frameborder="0" allowfullscreen></iframe>
+                    </td>
+                    <td>
+                        <button class="btn btn-danger" @onclick="() => DeleteVideo(video.VideoId)">Delete</button>
+                        <button class="btn btn-primary" @onclick="() => EditVideo(video.VideoId)">Edit</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+
+    List<Video> videos = new List<Video>();
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Delay(500);
+        var result = await HttpClient.GetFromJsonAsync<List<Video>>("api/video");
+        if (result is not null)
+            videos = result;
+    }
+    private async Task DeleteVideo(int videoId)
+    {
+        try
+        {
+            var response = await HttpClient.DeleteAsync($"api/video/{videoId}");
+            response.EnsureSuccessStatusCode();
+
+            videos.RemoveAll(v => v.VideoId == videoId);
+
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Error deleting video: {ex.Message}");
+        }
+    }
+
+    private async Task EditVideo(int videoId)
+    {
+        NavigationManager.NavigateTo($"/videos/edit/{videoId}");
+    }
+
+    private string searchTerm;
+
+    private async Task SearchIssues()
+    {
+        try
+        {
+            videos = await HttpClient.GetFromJsonAsync<List<Video>>($"api/video/search?searchItem={searchTerm}");
+        }
+        catch (Exception ex)
+        {
+            // Xử lý lỗi một cách thích hợp (ví dụ: hiển thị thông báo lỗi)
+            Console.WriteLine($"Lỗi khi tìm kiếm người dùng: {ex.Message}");
+        }
+    }
+}

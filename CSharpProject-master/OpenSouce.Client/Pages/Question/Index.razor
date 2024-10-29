@@ -1,0 +1,88 @@
+﻿@page "/questions"
+@inject HttpClient HttpClient
+
+@inject NavigationManager NavigationManager
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+
+<h1>Questions</h1>
+<br />
+
+<a href="/questions/add" class="btn btn-success">Add Question</a>
+
+@if (questions == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>QuestionText</th>
+                <th>QuestionType</th>
+                <th>Exam</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var question in questions)
+            {
+                <tr>
+                    <td>@question.QuestionText</td>
+                    <td>@question.QuestionType</td>
+                    <td>@question.Exam?.ExamName</td>
+                    <td>
+                        <button class="btn btn-primary mr-1" @onclick="@(() => EditQuestion(question.QuestionId))">Edit</button>
+                        <button class="btn btn-danger" @onclick="@(() => DeleteQuestion(question.QuestionId))">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+
+    <br />
+    <br />
+
+ 
+}
+
+@code {
+
+    private List<Question> questions = new List<Question>();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var questionsResponse = await HttpClient.GetFromJsonAsync<List<Question>>("api/question");
+            questions = questionsResponse;
+
+        
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching questions or exams: {ex.Message}");
+        }
+    }
+
+    private async Task EditQuestion(int questionId)
+    {
+        NavigationManager.NavigateTo($"/questions/edit/{questionId}");
+    }
+
+    private async Task DeleteQuestion(int questionId)
+    {
+        try
+        {
+            var response = await HttpClient.DeleteAsync($"api/question/{questionId}");
+            response.EnsureSuccessStatusCode();
+            questions.RemoveAll(q => q.QuestionId == questionId);
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Error deleting question: {ex.Message}");
+        }
+    }
+}

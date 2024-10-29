@@ -1,0 +1,68 @@
+﻿@page "/login"
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+
+
+
+@if (errorMessage != null)
+{
+    <p class="error-message">@errorMessage</p>
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card p-3">
+                <h3>Login</h3>
+                <form>
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username:</label>
+                        <input id="username" type="text" class="form-control" @bind="loginModel.Username" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password:</label>
+                        <input id="password" type="password" class="form-control" @bind="loginModel.Password" />
+                    </div>
+                    <button type="button" class="btn btn-primary" @onclick="HandleLogin">Login</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+@code {
+
+    private LoginModel loginModel = new LoginModel();
+    private string errorMessage;
+
+    private async Task HandleLogin()
+    {
+        try
+        {
+            HttpResponseMessage response = await HttpClient.PostAsJsonAsync("/api/User/login", loginModel);
+
+            if (response.IsSuccessStatusCode)
+            {
+                NavigationManager.NavigateTo("/admin");
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                errorMessage = "Invalid username or password.";
+            }
+            else
+            {
+                errorMessage = "An error occurred during login.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "An error occurred: " + ex.Message;
+        }
+    }
+
+  
+
+}

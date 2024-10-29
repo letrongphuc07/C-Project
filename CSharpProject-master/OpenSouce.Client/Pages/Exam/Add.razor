@@ -1,0 +1,66 @@
+﻿@page "/exams/add"
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+
+<h1>Add Exam</h1>
+
+<form @onsubmit="HandleSubmit">
+    <div class="form-group">
+        <label for="examName">Exam Name</label>
+        <input type="text" class="form-control" id="examName" @bind="exam.ExamName" required>
+    </div>
+    <div class="form-group">
+        <label for="startTime">Start Time</label>
+        <input type="datetime-local" class="form-control" id="startTime" @bind="exam.StartTime" required>
+    </div>
+    <div class="form-group">
+        <label for="endTime">End Time</label>
+        <input type="datetime-local" class="form-control" id="endTime" @bind="exam.EndTime" required>
+    </div>
+    <div class="form-group">
+        <label for="createdBy">Created By:</label>
+        <select id="createdBy" class="form-control" @bind="exam.CreatedBy">
+            <option value="0">-- Select User --</option>
+            @foreach (var user in users)
+            {
+                <option value="@user.UserId">@user.Username</option>
+            }
+        </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Create Exam</button>
+</form>
+
+@code {
+
+    private Exam exam = new Exam();
+    private List<User> users = new List<User>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var usersResponse = await HttpClient.GetFromJsonAsync<List<User>>("api/user");
+            users = usersResponse;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching users: {ex.Message}");
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            var response = await HttpClient.PostAsJsonAsync("api/exam", exam);
+            response.EnsureSuccessStatusCode();
+
+            NavigationManager.NavigateTo("/exams");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error creating exam: {ex.Message}");
+        }
+    }
+}

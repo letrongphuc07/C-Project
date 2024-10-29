@@ -1,0 +1,75 @@
+﻿@page "/course"
+@inject HttpClient http
+@inject NavigationManager navi
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender:false))
+
+<h3>Thông tin khóa học</h3>
+@if(course.Count == 0)
+{
+    <p><em>Loading....</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <td>Name</td>
+                <td>Price</td>
+                <td>Description</td>
+                <td>Image</td>
+                <td>Status</td>
+                <td>Owner period</td>
+                <td></td>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var x in course)
+            {
+                <tr>
+                    <td>@x.CourseName</td>
+                    <td>@x.CoursePrice</td>
+                    <td>@x.CourseDescription</td>
+                    <td><img src="@x.CourseImg" alt="@x.CourseName" height="50" width="50" class="img-fluid"></td>
+                    <td>@x.Status</td>
+                    <td>@x.OwnerPeriod</td>
+                    <td>
+                        <button class="btn btn-primary" @onclick="@(()=>EditCourse(@x.Id))">Edit</button>
+                        <button class="btn btn-danger" @onclick="@(()=>DeleteCourse(@x.Id))">Delete</button>
+                    </td>
+                </tr>   
+            }
+        </tbody>
+    </table>
+}
+<button class="btn btn-primary" @onclick="AddCourse">Add</button>
+
+
+@code {
+    List<Course> course = new List<Course>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCourse();
+    }
+
+    async Task LoadCourse()
+    {
+        var result = await http.GetFromJsonAsync<List<Course>>("api/courses");
+        if (result is not null)
+            course = result;
+    }
+
+    void EditCourse(int id)
+    {
+        navi.NavigateTo($"edit-course/{id}");
+    }
+    void AddCourse()
+    {
+        navi.NavigateTo("edit-course");
+    }
+    async void DeleteCourse(int id)
+    {
+        await http.DeleteAsync($"api/courses/{id}");
+        await LoadCourse();
+    }
+}

@@ -1,0 +1,75 @@
+﻿@page "/questions/edit/{questionId:int}"
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+
+<h1>Edit Question</h1>
+
+@if (question == null || exams == null)
+{
+  <p>Loading...</p>
+}
+else
+{
+  <form @onsubmit="HandleSubmit">
+    <div class="form-group">
+      <label for="questionText">Question Text</label>
+      <textarea class="form-control" id="questionText" @bind="question.QuestionText" required></textarea>
+    </div>
+    <div class="form-group">
+      <label for="questionType">Question Type</label>
+      <input type="text" class="form-control" id="questionType" @bind="question.QuestionType" required>
+    </div>
+    <div class="form-group">
+      <label for="examId">Exam:</label>
+      <select id="examId" class="form-control" @bind="question.ExamId" required>
+        <option value="0">-- Select Exam --</option>
+        @foreach (var exam in exams)
+        {
+          <option value="@exam.ExamId" selected="@(exam.ExamId == question.ExamId)">@exam.ExamName</option>
+        }
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Save Changes</button>
+  </form>
+}
+
+@code {
+
+  [Parameter]
+  public int QuestionId { get; set; }
+
+  private Question question;
+  private List<Exam> exams = new List<Exam>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var examsResponse = await HttpClient.GetFromJsonAsync<List<Exam>>("api/exam");
+            exams = examsResponse;
+
+            var questionResponse = await HttpClient.GetFromJsonAsync<Question>($"api/question/{QuestionId}");
+            question = questionResponse;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching question or exams: {ex.Message}");
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            var response = await HttpClient.PutAsJsonAsync($"api/question/{question.QuestionId}", question);
+            response.EnsureSuccessStatusCode();
+
+            NavigationManager.NavigateTo("/questions");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating question: {ex.Message}");
+        }
+    }
+    }

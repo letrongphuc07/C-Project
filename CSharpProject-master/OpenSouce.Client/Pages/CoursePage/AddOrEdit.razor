@@ -1,0 +1,111 @@
+﻿@page "/edit-course"
+@page "/edit-course/{id:int}"
+
+@inject HttpClient http
+@inject NavigationManager NavigationManager
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender:false))
+
+@if(Id == null)
+{
+    <h3>Create Course</h3>
+}
+else
+{
+    <h3>Edit Course</h3>    
+}
+
+<EditForm Model="course" OnSubmit="HandleSubmit">
+    <div>
+        <label for="name">Name</label>
+        <InputText id="name" @bind-Value="course.CourseName" class="form-control"/>
+    </div>   
+    <div>
+        <label for="price">Price</label>
+        <InputNumber id="price" @bind-Value="course.CoursePrice" class="form-control"/>
+    </div>
+    <div>
+        <label for="description">Description</label>
+        <InputText id="description" @bind-Value="course.CourseDescription" class="form-control" />
+    </div>
+    <div>
+        <label class="form-label @(ImageUploadMessage == ""?"":"text-danger")">
+            @(ImageUploadMessage == "" ? "Upload image" : ImageUploadMessage)
+        </label>
+        <InputFile class="form-control" OnChange="UploadImage"/>
+    </div>
+    <div>
+        <label>Status</label>
+        <div>
+            <label>
+                <input type="radio" @onclick="() => course.Status = true" checked="@((bool)course.Status)" />
+                True
+            </label>
+            <label>
+                <input type="radio" @onclick="() => course.Status = false" checked="@(!(bool)course.Status)" />
+                False
+            </label>
+        </div>
+    </div>
+    <div>
+        <label for="owner">Owner period</label>
+        <InputNumber id="owner" @bind-Value="course.OwnerPeriod" class="form-control" />
+    </div>
+    <button class="btn btn-primary" type="submit">Save</button>
+</EditForm>
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+    public Course course { get; set; } = new Course();
+    string ImageUploadMessage = "";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id is not null)
+        {
+            var result = await http.GetFromJsonAsync<Course>($"api/courses/{(int)Id}");
+            if (result is not null)
+                course = result;
+        }
+    }
+
+    async Task HandleSubmit()
+    {
+        HttpResponseMessage result;
+        if (Id is not null)
+        {
+            result = await http.PutAsJsonAsync($"api/courses/{Id}", course);
+        }
+        else
+        {
+            result = await http.PostAsJsonAsync("api/courses", course);
+        }
+
+        if (result.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo("/course"); 
+        }
+        else
+        {
+            // Xử lý lỗi
+        }
+    }
+
+    async Task UploadImage(InputFileChangeEventArgs e)
+    {
+        if (e.File.Name.ToLower().Contains(".png"))
+        {
+            var format = "img/png";
+            var resizeImage = await e.File.RequestImageFileAsync(format, 50, 50);
+            var buffer = new byte[resizeImage.Size];
+            await resizeImage.OpenReadStream().ReadAsync(buffer);
+            var imageData = $"data:{format};base64,{Convert.ToBase64String(buffer)}";
+            ImageUploadMessage = "";
+            course.CourseImg = imageData;
+            imageData = "";
+            return;
+        }
+        ImageUploadMessage = "png file needed";
+        return;
+    }
+}
